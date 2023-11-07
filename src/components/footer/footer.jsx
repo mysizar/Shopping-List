@@ -7,12 +7,19 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import Auth from "../auth/auth";
 import "./footer.css";
-import { auth } from "../../config/firebase";
+import { auth, db } from "../../config/firebase";
 import { signOut } from "firebase/auth";
+import {
+  writeBatch,
+  getDocs,
+  collection,
+  query,
+  where,
+} from "firebase/firestore";
 
 import PropTypes from "prop-types";
 
-function FooterBar({ setItems, items }) {
+function FooterBar({ uid, getShoppingList, items }) {
   const [totalItemCount, setTotalItemCount] = useState(0);
   const [isHide, setIsHide] = useState(true);
   const [isLogged, setIsLogged] = useState(false);
@@ -31,6 +38,27 @@ function FooterBar({ setItems, items }) {
       setIsLogged(false);
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const clearAll = async () => {
+    try {
+      const q = query(
+        collection(db, "shopping-lists"),
+        where("userId", "==", uid)
+      );
+
+      const batch = writeBatch(db);
+      const list = await getDocs(q);
+      list.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+
+      getShoppingList();
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -58,7 +86,7 @@ function FooterBar({ setItems, items }) {
           </>
         )}
 
-        <button className="btn-footer" onClick={() => setItems([])}>
+        <button className="btn-footer" onClick={clearAll}>
           <FontAwesomeIcon icon={faBan} />
           <span>Clear All</span>
         </button>
@@ -72,5 +100,7 @@ export default FooterBar;
 
 FooterBar.propTypes = {
   setItems: PropTypes.func,
+  getShoppingList: PropTypes.func,
   items: PropTypes.array,
+  uid: PropTypes.string,
 };

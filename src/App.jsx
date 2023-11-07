@@ -5,7 +5,6 @@ import Input from "./components/input/input";
 import FooterBar from "./components/footer/footer";
 import { db } from "./config/firebase";
 import { getDocs, collection, query, where } from "firebase/firestore";
-
 import { auth } from "./config/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -25,16 +24,19 @@ function App() {
 
   const getShoppingList = async () => {
     try {
+      // select user data from database
       const q = query(
         collection(db, "shopping-lists"),
         where("userId", "==", uid)
       );
       const data = await getDocs(q);
 
+      // select only useful data
       const filteredData = data.docs.map((doc) => ({
         ...doc.data(),
         id: doc.id,
       }));
+      // sort data
       const sortedData = filteredData.sort((a, b) => {
         if (a.isSelected === b.isSelected) return a.position - b.position;
         return b.isSelected - a.isSelected;
@@ -72,7 +74,12 @@ function App() {
           )}
         </div>
 
-        <FooterBar setItems={setItems} items={items} />
+        <FooterBar
+          uid={uid}
+          getShoppingList={getShoppingList}
+          setItems={setItems}
+          items={items}
+        />
       </div>
     </div>
   );
